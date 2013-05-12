@@ -1,0 +1,33 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<script src="animator.js"></script>
+<style type="text/css">
+body {margin:0;padding:0;background:#000;}
+</style>
+</head>
+<body>
+<canvas id="myCanvas" width="600" height="320"></canvas>
+</body>
+<script>
+(function() {
+  var game = new Animator();
+  game.run();
+  navigator.cascades.onmessage = function onmessage(message) {
+      switch(message) {
+          case 'left':
+          game.stopped = false;
+          game.direction = 'left';
+          break;
+          case 'right':
+          game.stopped = false;
+          game.direction = 'right';
+          break;
+          case 'stop':
+          game.stopped = true;
+          break;
+      }
+  };
+})();
+</script>
+</html>

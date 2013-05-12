@@ -1,0 +1,85 @@
+<script>
+
+var dataStore = function() {
+    
+    var _self = this;
+    console.log(this.store);
+    if(!localStorage.getItem('data')) {
+        this.store = [];
+        localStorage.setItem('data', JSON.stringify(store));
+    }
+    else {
+        this.store = JSON.parse(localStorage.getItem('data'));
+    }
+    
+    this.setItem = function(index, value) {
+    	if(index > -1) {
+	        _self.store[index] = value;
+	    }
+	    else {
+	    	_self.store[_self.store.length] = value;
+	    }
+	    console.log('we now have ' + JSON.stringify(_self.store));
+        localStorage.setItem('data', JSON.stringify(_self.store));
+    }
+    
+    this.getItem = function(index) {
+        if(_self.store[index] !== undefined) {
+            return _self.store[index];
+        }
+        else {
+            return '';
+        }
+    }
+    
+    this.deleteItem = function(index) {
+        _self.store.splice(index,1);
+        localStorage.setItem('data', JSON.stringify(_self.store));
+    }
+
+    this.clear = function() {
+        _self.store = [];
+        localStorage.setItem('data', JSON.stringify(_self.store));
+    }
+    
+    this.getAllItems = function() {
+        return _self.store;
+    }
+}
+
+    var store = new dataStore;
+    
+    navigator.cascades.postMessage('allitems~' + JSON.stringify(store.getAllItems()));
+    
+    navigator.cascades.onmessage = function onmessage(message) {
+        var messageComponents = message.split('~');
+        var cmd = messageComponents[0];
+        switch (cmd) {
+            case 'update':
+                store.setItem(messageComponents[1], messageComponents[2]);
+                navigator.cascades.postMessage('stored');
+                break;
+            case 'set':
+            	console.log('set received');
+                store.setItem(-1, messageComponents[1]);
+                navigator.cascades.postMessage('allitems~' + JSON.stringify(store.getAllItems()));
+                break;                
+            case 'get':
+                navigator.cascades.postMessage('fetched~' + store.getItem(messageComponents[1]));
+                break;
+            case 'getall':
+                navigator.cascades.postMessage('allitems~' + JSON.stringify(store.getAllItems()));
+                break;
+            case 'delete':
+                store.deleteItem(messageComponents[1]);
+                navigator.cascades.postMessage('allitems~' + JSON.stringify(store.getAllItems()));
+                break;
+            case 'clear':
+                store.clear();
+                navigator.cascades.postMessage('allitems~' + JSON.stringify(store.getAllItems()));
+                break;
+            }            
+          }
+        
+
+</script>
