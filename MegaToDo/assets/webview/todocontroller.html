@@ -75,7 +75,7 @@ var dataStore = function() {
     }
     
     this.toggleDone = function(index) {
-    	if(_self.doneitems.contains(index)) {
+    	if(_self.doneitems.contains(index.toString())) {
     		_self.doneitems.splice(_self.doneitems.indexOf(index.toString()),1); 
     	}
     	else {
@@ -92,11 +92,12 @@ var dataStore = function() {
     	localStorage.setItem('doneitems', JSON.stringify(_self.doneitems));
     }
     
+    
     this.deleteItem = function(index) {
-        _self.store.splice(index,1);
-        if(_self.doneitems.contains(index)) {
-        	_self.doneitems.splice(index,1);
+        if(_self.doneitems.contains(index.toString())) {
+        	_self.toggleDone(index);
         }
+        _self.store.splice(index,1);
         localStorage.setItem('data', JSON.stringify(_self.store));
     }
 
