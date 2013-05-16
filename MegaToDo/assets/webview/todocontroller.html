@@ -1,16 +1,58 @@
 <script>
 
+/*   Copyright 2013 Marco van Hylckama Vlieg
+ * 
+ * email:marcovhv@gmail.com, twitter:@TheMarco
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * 
+ */
+ 
+/* Simple data store which keeps and controls an
+ * array of strings to store todo items. Data is stored
+ * through HTML5 localStorage   
+ */
+
+Array.prototype.contains = function(obj) {
+    var i = this.length;
+    while (i--) {
+        if (this[i] == obj) {
+            return true;
+        }
+    }
+    return false;
+}
+
 var dataStore = function() {
-    
+        
     var _self = this;
-    console.log(this.store);
+
     if(!localStorage.getItem('data')) {
         this.store = [];
-        localStorage.setItem('data', JSON.stringify(store));
+        localStorage.setItem('data', JSON.stringify(this.store));
     }
     else {
         this.store = JSON.parse(localStorage.getItem('data'));
     }
+
+    if(!localStorage.getItem('doneitems')) {
+        this.doneitems = [];
+        localStorage.setItem('doneitems', JSON.stringify(this.doneitems));
+    }
+    else {
+        this.doneitems = JSON.parse(localStorage.getItem('doneitems'));
+    }
+
     
     this.setItem = function(index, value) {
     	if(index > -1) {
@@ -19,7 +61,7 @@ var dataStore = function() {
 	    else {
 	    	_self.store[_self.store.length] = value;
 	    }
-	    console.log('we now have ' + JSON.stringify(_self.store));
+
         localStorage.setItem('data', JSON.stringify(_self.store));
     }
     
@@ -32,8 +74,29 @@ var dataStore = function() {
         }
     }
     
+    this.toggleDone = function(index) {
+    	if(_self.doneitems.contains(index)) {
+    		_self.doneitems.splice(_self.doneitems.indexOf(index.toString()),1); 
+    	}
+    	else {
+    		_self.doneitems.push(index.toString());
+    	}
+        localStorage.setItem('doneitems', JSON.stringify(_self.doneitems));    	
+    }
+    
+    this.deleteDone = function() {
+    	for(i=0;i<_self.doneitems.length;i++) {
+    		_self.deleteItem(parseInt(_self.doneitems[i]));
+    	}
+    	_self.doneitems = [];
+    	localStorage.setItem('doneitems', JSON.stringify(_self.doneitems));
+    }
+    
     this.deleteItem = function(index) {
         _self.store.splice(index,1);
+        if(_self.doneitems.contains(index)) {
+        	_self.doneitems.splice(index,1);
+        }
         localStorage.setItem('data', JSON.stringify(_self.store));
     }
 
@@ -43,7 +106,8 @@ var dataStore = function() {
     }
     
     this.getAllItems = function() {
-        return _self.store;
+    	var items = {"items" : _self.store, "done" : _self.doneitems};
+        return items;
     }
 }
 
@@ -52,6 +116,9 @@ var dataStore = function() {
     navigator.cascades.postMessage('allitems~' + JSON.stringify(store.getAllItems()));
     
     navigator.cascades.onmessage = function onmessage(message) {
+    
+    	/* Split the message. First part is the type of the message, second part the actual message */
+    
         var messageComponents = message.split('~');
         var cmd = messageComponents[0];
         switch (cmd) {
@@ -60,7 +127,6 @@ var dataStore = function() {
                 navigator.cascades.postMessage('stored');
                 break;
             case 'set':
-            	console.log('set received');
                 store.setItem(-1, messageComponents[1]);
                 navigator.cascades.postMessage('allitems~' + JSON.stringify(store.getAllItems()));
                 break;                
@@ -74,12 +140,17 @@ var dataStore = function() {
                 store.deleteItem(messageComponents[1]);
                 navigator.cascades.postMessage('allitems~' + JSON.stringify(store.getAllItems()));
                 break;
+            case 'toggledone':
+                store.toggleDone(messageComponents[1]);
+                break;            
+            case 'deletedone':
+                store.deleteDone();
+                navigator.cascades.postMessage('allitems~' + JSON.stringify(store.getAllItems()));
+                break;                
             case 'clear':
                 store.clear();
                 navigator.cascades.postMessage('allitems~' + JSON.stringify(store.getAllItems()));
                 break;
             }            
-          }
-        
-
+          }        
 </script>

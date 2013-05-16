@@ -1,10 +1,27 @@
-// Default empty project template
+/*   Copyright 2013 Marco van Hylckama Vlieg
+ * 
+ * email:marcovhv@gmail.com, twitter:@TheMarco
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * 
+ */
+
 import bb.cascades 1.0
 import bb.system 1.0
 import "json_parse.js" as JSONFunctions
-// creates one page with a label
-NavigationPane {
 
+NavigationPane {
+    
     Menu.definition: MenuDefinition {
         actions: [
             ActionItem {
@@ -14,9 +31,8 @@ NavigationPane {
                     aboutSheet.open();
                 }
             }
-        ] // end of actions list
-    } // end of MenuDefinition
-    
+        ] 
+    } 
     
     id: megaToDo
     Page {
@@ -25,23 +41,35 @@ NavigationPane {
         titleBar: TitleBar {
             title: "MegaToDo"
         }
+        
         property alias todolistcontroller: todolistcontroller
         actions: [
+            
             ActionItem {
                 title: "New Item"
                 imageSource: "images/ic_add.png"
                 ActionBar.placement: ActionBarPlacement.OnBar
-
+                
                 onTriggered: {
                     newItemData.text = '';
                     newItem.open();
                 }
             },
             ActionItem {
-                title: "Clear List"
+                title: "Clear Done"
+                imageSource: "images/ic_deleteselected.png"
+                ActionBar.placement: ActionBarPlacement.OnBar
+                
+                onTriggered: {
+                    todolistcontroller.postMessage('deletedone');
+                    // delete selected
+                }
+            },
+            ActionItem {
+                title: "Clear All"
                 imageSource: "images/ic_delete.png"
                 ActionBar.placement: ActionBarPlacement.OnBar
-
+                
                 onTriggered: {
                     cleardialog.show();
                 }
@@ -56,23 +84,37 @@ NavigationPane {
                         todolist.removeAll();
                     }
                     if (message.data.match('allitems')) {
-                        console.log('message: ' + message.data);
                         todolist.removeAll();
                         var fulllist = message.data.split('~')[1];
-                        console.log('getting all items' + fulllist);
                         var reallist = JSONFunctions.parse(fulllist);
-                        for (var i = 0;i<reallist.length;i++) {
+                        for (var i = reallist.items.length-1;i>0;i--) {
+                            
                             var createdControl = todolistitem.createObject();
                             var createdDivider = listseparator.createObject();
-                            createdControl.textString = reallist[i];
-                            createdControl.itemId = i;
-                            todolist.insert(0, createdDivider);
-                            todolist.insert(0, createdControl);
+                            var itemisdone = false;
+                            for (var j = 0; j < reallist.done.length; j ++) {
+                                if (reallist.done[j] == reallist.items.indexOf(reallist.items[i])) {
+                                    itemisdone = true;
+                                    break;
+                                }
+                            }
+                            
+                            if(itemisdone) {
+                                createdControl.textString = '<html><span style="color:#cccccc;font-style:italic;">' + reallist.items[i] + '</span></html>';
+                            }
+                            else {
+                                createdControl.textString = reallist.items[i];
+                            }
+
+							createdControl.itemId = i;
+							todolist.insert(0, createdDivider);
+							todolist.insert(0, createdControl);
                         }
-                        if (reallist.length === 0) {
+                        
+                        if (reallist.items.length === 0) {
                             var createdControl = todolistitem.createObject();
                             var createdDivider = listseparator.createObject();
-                            createdControl.textString = 'Nothing to do. Add something!';
+                            createdControl.textString = 'Nothing to do!';
                             createdControl.itemId = -1;
                             todolist.insert(0, createdDivider);
                             todolist.insert(0, createdControl);
@@ -102,18 +144,35 @@ NavigationPane {
                 Container {
                     property string textString
                     property string itemId
+                    id: theItem
                     contextActions: [
                         ActionSet {
                             title: "Action Set"
                             subtitle: "This is an action set."
-
+                            
                             actions: [
+                                ActionItem {
+                                    title: "Toggle Done"
+                                    imageSource: "images/ic_done.png"
+                                    onTriggered: {
+                                        if(itemId > -1) {
+                                            if(todoText.text.match('<html>')) {
+                                                todoText.text = todoText.text.replace('<html><span style="color:#cccccc;font-style:italic;">', '').replace('</span></html>', '');
+                                            }
+else {
+                                                todoText.text = '<html><span style="color:#cccccc;font-style:italic;">' + todoText.text + '</span></html>';
+}
+                                        }
+                                        todolistcontroller.postMessage('toggledone~' + itemId);
+                                        theItem.background = Color.Transparent;
+                                    }
+                                },
                                 ActionItem {
                                     title: "Delete"
                                     imageSource: "images/ic_delete.png"
                                     onTriggered: {
-                                        if(itemId > -1) {
-                                        	todolistcontroller.postMessage('delete~' + itemId);
+                                        if (itemId > -1) {
+                                            todolistcontroller.postMessage('delete~' + itemId);
                                         }
                                     }
                                 }
@@ -123,7 +182,18 @@ NavigationPane {
                     topPadding: 25
                     rightPadding: topPadding
                     leftPadding: rightPadding
+                    bottomPadding: topPadding
+                    onTouch: {
+                        if (event.isDown()) {
+                            
+                            theItem.background = Color.create('#99dbf1');
+                        }
+                        if (event.isUp()) {
+                            theItem.background = Color.Transparent;
+                        }
+                    }
                     Label {
+                        id: todoText
                         text: textString
                         multiline: true
                         minWidth: 720
@@ -134,7 +204,6 @@ NavigationPane {
             ComponentDefinition {
                 id: listseparator
                 Container {
-                    topMargin: 25
                     Divider {
                     }
                 }
@@ -198,14 +267,14 @@ NavigationPane {
                         TextField {
                             id: newItemData
                         }
-                    	Button {
-                        	text: "Add"
-                        	onClicked: {
-                        	    if(newItemData.text !== '') {
-                        	    	todolistcontroller.postMessage('set~' + newItemData.text);
-                                	newItem.close();
-                                	}
-                        	    }
+                        Button {
+                            text: "Add"
+                            onClicked: {
+                                if(newItemData.text !== '') {
+                                    todolistcontroller.postMessage('set~' + newItemData.text);
+                                    newItem.close();
+                                }
+                            }
                         }
                     }
                 }
