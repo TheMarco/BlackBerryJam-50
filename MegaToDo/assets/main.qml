@@ -87,7 +87,7 @@ NavigationPane {
                         todolist.removeAll();
                         var fulllist = message.data.split('~')[1];
                         var reallist = JSONFunctions.parse(fulllist);
-                        for (var i = reallist.items.length-1;i>0;i--) {
+                        for (var i = reallist.items.length-1;i>=0;i--) {
                             
                             var createdControl = todolistitem.createObject();
                             var createdDivider = listseparator.createObject();
@@ -184,9 +184,8 @@ else {
                     leftPadding: rightPadding
                     bottomPadding: topPadding
                     onTouch: {
-                        if (event.isDown()) {
-                            
-                            theItem.background = Color.create('#99dbf1');
+                        if (event.isDown()) {                         
+                            theItem.background = Color.create('#00a7de');
                         }
                         if (event.isUp()) {
                             theItem.background = Color.Transparent;
