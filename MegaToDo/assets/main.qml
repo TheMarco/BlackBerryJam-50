@@ -179,8 +179,8 @@ else {
                             ]
                         } // end of ActionSet
                     ]
-                    topPadding: 25
-                    rightPadding: topPadding
+                    topPadding: 30
+                    rightPadding: 25
                     leftPadding: rightPadding
                     bottomPadding: topPadding
                     onTouch: {
